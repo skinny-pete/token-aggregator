@@ -4,6 +4,8 @@
 
 This is a Hardhat project
 
+Refer to this: https://hardhat.org/getting-started/
+
 To compile contracts `npx hardhat compile`
 
 To test contracts   `npx hardhat test`
