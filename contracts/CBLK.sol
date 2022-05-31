@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -5,65 +6,41 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CBLK is ERC20, Ownable {
-    uint ratioSum;
-    uint l;
-
-    uint PRECISION = 10**18;
-
     address[] public tokens;
-    uint[] public ratios;
+    mapping(address => uint256) public balances;
 
-    constructor(
-        string memory name,
-        string memory symbol,
-        address[] memory _tokens,
-        uint[] memory _ratios
-    ) ERC20(name, symbol) {
-        tokens = _tokens;
-        ratios = _ratios;
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
-        for (uint i = 0; i < ratios.length; i++) {
-            ratioSum += ratios[i];
-        }
-        l = ratios.length;
-    }
-
-    function deposit(uint[] memory amounts) public {
-        require(amounts.length == tokens.length);
-        uint total = 0;
-        if (l > 1) {
-            total += amounts[0];
-            for (uint i = 1; i < amounts.length; i++) {
-                require(
-                    amounts[i] / amounts[i - 1] == ratios[i] / ratios[i - 1],
-                    "Incorrect deposit ratio"
-                );
-                total += amounts[i];
+    function deposit(address[] memory tokens_, uint256[] memory amounts)
+        public
+        onlyOwner
+    {
+        uint256 l = tokens_.length;
+        require(l == amounts.length);
+        uint256 tonnes;
+        for (uint256 i = 0; i < l; i++) {
+            address token = tokens_[i];
+            uint256 amount = amounts[i];
+            if (balances[token] == 0) {
+                tokens.push(token);
             }
-        } else {
-            total = amounts[0];
+            IERC20(token).transferFrom(msg.sender, address(this), amount);
+            balances[token] += amount;
+            tonnes += amount;
         }
-
-        for (uint i = 0; i < amounts.length; i++) {
-            IERC20(tokens[i]).transferFrom(
-                msg.sender,
-                address(this),
-                amounts[i]
-            );
-        }
-
-        _mint(msg.sender, total);
+        _mint(msg.sender, tonnes);
     }
 
-    function withdraw(uint amount) public {
-        require(balanceOf(msg.sender) >= amount);
-        for (uint i = 0; i < l; i++) {
-            IERC20(tokens[i]).transfer(
-                msg.sender,
-                ((amount * ratios[i] * PRECISION) / ratioSum) / PRECISION
-            );
+    function withdraw(uint256 amount) public {
+        uint256 tonnes;
+        uint256 l = tokens.length;
+        for (uint256 i = 0; i < l; i++) {
+            address token = tokens[i];
+            uint256 withdrawal = (balances[token] * amount) / totalSupply();
+            IERC20(token).transfer(msg.sender, withdrawal);
+            balances[token] -= withdrawal;
+            tonnes += amount;
         }
-
-        _burn(msg.sender, amount);
+        _burn(msg.sender, tonnes);
     }
 }
