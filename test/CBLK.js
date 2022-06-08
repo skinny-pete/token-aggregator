@@ -1,108 +1,79 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
 
-describe("CBLK", function () {
-  let CBLK, CBLKFactory, CBT, CBTFactory, deployer, acc1;
-  let CBTS, ratios;
+describe('CBLK', () => {
+  let CBLKFactory, CBTFactory; // Contract factories
+  let CBLK, CBTs; // Contract instances
+  let deployer, notDeployer; // Signers
+  let CBTAddresses; // Convenince values
 
   before(async () => {
-    CBLKFactory = await ethers.getContractFactory("CBLK");
-    CBTFactory = await ethers.getContractFactory("CBT");
+    CBLKFactory = await ethers.getContractFactory('CBLK');
+    CBTFactory = await ethers.getContractFactory('CBT');
+    [deployer, notDeployer] = await ethers.getSigners();
   });
 
   beforeEach(async () => {
-    [deployer, acc1] = await ethers.getSigners();
-    CBT1 = await CBTFactory.deploy("Changeblock Base Tonne", "CBT");
-    CBT2 = await CBTFactory.deploy("Changeblock Base Tonne", "CBT");
-    CBT3 = await CBTFactory.deploy("Changeblock Base Tonne", "CBT");
-    CBT4 = await CBTFactory.deploy("Changeblock Base Tonne", "CBT");
-    const cbtAddresses = [
-      CBT1.address,
-      CBT2.address,
-      CBT3.address,
-      CBT4.address,
+    CBLK = await CBLKFactory.deploy('Changeblock', 'CBLK');
+    CBTs = [
+      await CBTFactory.deploy('Carbon Base Tonne: 1', 'CBT-1'),
+      await CBTFactory.deploy('Carbon Base Tonne: 2', 'CBT-2'),
+      await CBTFactory.deploy('Carbon Base Tonne: 3', 'CBT-3'),
     ];
-    CBTS = [CBT1, CBT2, CBT3, CBT4];
-    ratios = ["0.2", "0.2", "0.5", "0.1"].map((x) =>
-      ethers.utils.parseEther(x)
-    );
-    CBLK = await CBLKFactory.deploy(
-      "Changeblock",
-      "CBLK",
-      cbtAddresses,
-      ratios
-    );
+    CBTAddresses = CBTs.map((CBT) => CBT.address);
   });
 
-  async function mintAndApprove(_ratios = null) {
-    if (_ratios == null) {
-      _ratios = ratios;
+  // Mint to deployer and approve to a recipient
+  const mintAndApprove = async (tokens, amounts, owner, spender) => {
+    for (let i = 0; i < tokens.length; i++) {
+      await tokens[i].mint(owner.address, amounts[i]);
+      await tokens[i].approve(spender.address, amounts[i]);
     }
-    for (let i = 0; i < CBTS.length; i++) {
-      const CBT = CBTS[i];
-      await CBT.mint(deployer.address, _ratios[i]);
-      await CBT.approve(CBLK.address, _ratios[i]);
-    }
-  }
+  };
 
-  it("Should deploy without errors", async () => {});
-
-  it("Should allow deposits at correct ratio", async () => {
-    await mintAndApprove();
-    await expect(() => CBLK.deposit(ratios)).to.changeTokenBalance(
-      CBLK,
-      deployer,
-      ethers.utils.parseEther("1")
-    );
-  });
-
-  it("Should revert with deposit in incorrect ratio", async () => {
-    incorrectAmounts = ["0.3", "0.3", "0.15", "0.25"].map((x) =>
-      ethers.utils.parseEther(x)
-    );
-    await mintAndApprove((_ratios = incorrectAmounts));
-
-    await expect(CBLK.deposit(incorrectAmounts)).to.be.revertedWith(
-      "Incorrect deposit ratio"
-    );
-  });
-
-  it("Should allow withdrawals", async () => {
-    amounts = ["20", "20", "50", "10"].map((x) => ethers.utils.parseEther(x));
-    await mintAndApprove(amounts);
-
-    await CBLK.deposit(amounts);
-    expect(await CBLK.balanceOf(deployer.address)).to.equal(
-      ethers.utils.parseEther("100")
+  describe('Deposits', async () => {
+    const CBTDeposits = ['100', '200', '300'].map((n) =>
+      ethers.utils.parseEther(n)
     );
 
-    await CBLK.withdraw(ethers.utils.parseEther("50"));
-    expect(await CBT1.balanceOf(deployer.address)).to.equal(
-      ethers.utils.parseEther("10")
-    );
-    expect(await CBT2.balanceOf(deployer.address)).to.equal(
-      ethers.utils.parseEther("10")
-    );
-    expect(await CBT3.balanceOf(deployer.address)).to.equal(
-      ethers.utils.parseEther("25")
-    );
-    expect(await CBT4.balanceOf(deployer.address)).to.equal(
-      ethers.utils.parseEther("5")
-    );
-    expect(await CBLK.balanceOf(deployer.address)).to.equal(
-      ethers.utils.parseEther("50")
-    );
-  });
+    it('Correct post-deposit token balances', async () => {
+      await mintAndApprove(CBTs, CBTDeposits, deployer, CBLK);
+      await CBLK.deposit(CBTAddresses, CBTDeposits);
+      await expect(await CBLK.balanceOf(deployer.address)).to.equal(
+        ethers.utils.parseEther('600')
+      );
+      for (let i = 0; i < CBTs.length; i++) {
+        await expect(await CBTs[i].balanceOf(CBLK.address)).to.equal(
+          CBTDeposits[i]
+        );
+      }
+    });
 
-  it("Should only allow owner to mint CBTs", async () => {
-    await expect(() =>
-      CBT1.connect(deployer).mint(
-        deployer.address,
-        ethers.utils.parseEther("100")
-      )
-    ).to.changeTokenBalance(CBT1, deployer, ethers.utils.parseEther("100"));
-    await expect(
-      CBT1.connect(acc1).mint(acc1.address, ethers.utils.parseEther("100"))
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    it('Emits `Deposit` event', async () => {
+      await mintAndApprove(CBTs, CBTDeposits, deployer, CBLK);
+      await expect(CBLK.deposit(CBTAddresses, CBTDeposits))
+        .to.emit(CBLK, 'Deposit')
+        .withArgs(CBTAddresses, CBTDeposits);
+    });
+
+    it('Rejects non-owner deposits', async () => {
+      await mintAndApprove(CBTs, CBTDeposits, notDeployer, CBLK);
+      await expect(
+        CBLK.connect(notDeployer).deposit(CBTAddresses, CBTDeposits)
+      ).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    it('Rejects deposits with insufficient approved CBTs', async () => {
+      await mintAndApprove(CBTs, CBTDeposits, deployer, CBLK);
+      const increasedCBTDeposits = CBTDeposits.map((amount) => amount.mul('2'));
+      await expect(
+        CBLK.deposit(CBTAddresses, increasedCBTDeposits)
+      ).to.be.revertedWith('ERC20: insufficient allowance');
+    });
   });
 });
+
+// We want proof it functions as it's supposed to,
+// so allows assembly and disassembly and check it's the right number minted and burned and returned
+// Check that any whitelisting or anything like that works
+// Check total supply is updated etc
