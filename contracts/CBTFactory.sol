@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
-import "./CBT.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import './CBT.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 
 contract CBTFactory is Ownable {
     mapping(address => bool) whitelist;
@@ -17,7 +18,7 @@ contract CBTFactory is Ownable {
         public
         returns (address)
     {
-        require(whitelist[msg.sender], "not approved");
+        require(whitelist[msg.sender], 'not approved');
         CBT newCBT = new CBT(name, symbol);
         newCBT.transferOwnership(msg.sender);
         isCBT[address(newCBT)] = true;

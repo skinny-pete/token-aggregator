@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.0;
 
-import "./CBLKFixed.sol";
-import "./CBLKUnfixed.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import './CBLKFixed.sol';
+import './CBLKUnfixed.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 
 contract CBLKFactory is Ownable {
     mapping(address => bool) whitelist;
@@ -22,9 +23,9 @@ contract CBLKFactory is Ownable {
         string calldata name,
         string calldata symbol,
         address[] calldata tokens,
-        uint[] calldata ratios
+        uint256[] calldata ratios
     ) public returns (address) {
-        require(whitelist[msg.sender], "not approved");
+        require(whitelist[msg.sender], 'not approved');
         CBLKFixed newCBLK = new CBLKFixed(name, symbol, tokens, ratios);
         newCBLK.transferOwnership(msg.sender);
         isCBLK[address(newCBLK)] = true;
@@ -32,12 +33,11 @@ contract CBLKFactory is Ownable {
         return address(newCBLK);
     }
 
-    function deploy(
-        string calldata name,
-        string calldata symbol,
-        address[] calldata tokens
-    ) public returns (address) {
-        require(whitelist[msg.sender], "not approved");
+    function deploy(string calldata name, string calldata symbol)
+        public
+        returns (address)
+    {
+        require(whitelist[msg.sender], 'not approved');
         CBLKUnfixed newCBLK = new CBLKUnfixed(name, symbol);
         newCBLK.transferOwnership(msg.sender);
         isCBLK[address(newCBLK)] = true;

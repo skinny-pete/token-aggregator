@@ -1,11 +1,7 @@
 # CBT and CBLK
 
-## This repo contains the contracts and unit tests for CBT and CBLK
+This repo contains the contracts and unit tests for Changeblock's CBT and CBLK
 
-This is a Hardhat project
+Authors - Theo Dale & Peter Whitby
 
-Refer to this: https://hardhat.org/getting-started/
-
-To compile contracts `npx hardhat compile`
-
-To test contracts   `npx hardhat test`
+Learn more @ https://www.changeblock.com/
