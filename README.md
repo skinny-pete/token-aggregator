@@ -1,9 +1,10 @@
 # CBT and CBLK
 
-## This repo contains the contracts and unit tests for CBT and CBLK
+This repo contains the contracts and unit tests for Changeblock's CBT and CBLK
 
-This is a Hardhat project
+Authors - Theo Dale & Peter Whitby
 
+<<<<<<< HEAD
 Refer to this: https://hardhat.org/getting-started/
 
 To compile contracts `npx hardhat compile`
@@ -19,3 +20,6 @@ To test contracts   `npx hardhat test`
 CBT.sol - An ERC20 token with a data field for a data packet link
 
 CBLK.sol - An ERC20 aggregator - it is also an ERC20, but while minting it locks ERC20 tokens which can be accessed by burning it
+=======
+Learn more @ https://www.changeblock.com/
+>>>>>>> factory
