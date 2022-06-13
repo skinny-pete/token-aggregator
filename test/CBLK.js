@@ -6,7 +6,7 @@ describe("CBLK", function () {
   let CBTS, ratios;
 
   before(async () => {
-    CBLKFactory = await ethers.getContractFactory("CBLK");
+    CBLKFactory = await ethers.getContractFactory("CBLKFixed");
     CBTFactory = await ethers.getContractFactory("CBT");
   });
 
