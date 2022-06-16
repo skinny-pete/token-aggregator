@@ -2,12 +2,14 @@
 pragma solidity >=0.8.0;
 
 import './CBLKFixed.sol';
-import './CBLKUnfixed.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
+import './CBLKIndex.sol';
 
-contract CBLKFactory is Ownable {
+contract CBLKFixedFactory is Ownable {
     mapping(address => bool) whitelist;
     mapping(address => bool) public isCBLK;
+
+    CBLKIndex index;
 
     event Deployment(address CBLK);
 
@@ -19,7 +21,7 @@ contract CBLKFactory is Ownable {
         whitelist[who] = approval;
     }
 
-    function deploy(
+    function deployFixed(
         string calldata name,
         string calldata symbol,
         address[] calldata tokens,
@@ -29,19 +31,12 @@ contract CBLKFactory is Ownable {
         CBLKFixed newCBLK = new CBLKFixed(name, symbol, tokens, ratios);
         newCBLK.transferOwnership(msg.sender);
         isCBLK[address(newCBLK)] = true;
+        index.setCBLK(address(newCBLK));
         emit Deployment(address(newCBLK));
         return address(newCBLK);
     }
 
-    function deploy(string calldata name, string calldata symbol)
-        public
-        returns (address)
-    {
-        require(whitelist[msg.sender], 'not approved');
-        CBLKUnfixed newCBLK = new CBLKUnfixed(name, symbol);
-        newCBLK.transferOwnership(msg.sender);
-        isCBLK[address(newCBLK)] = true;
-        emit Deployment(address(newCBLK));
-        return address(newCBLK);
+    function setIndex(address _index) public onlyOwner {
+        index = CBLKIndex(_index);
     }
 }
