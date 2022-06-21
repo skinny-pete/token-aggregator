@@ -6,24 +6,22 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 
-/// @title Changeblock
+/// @title Unfixed Ratio Changeblock token.
 /// @author Theo Dale & Peter Whitby.
-/// @notice CBLK tokens represents a share of an index of CBTs.
-/// The index is curated by an owner.
-/// CBLK tokens are backed 1-1 by CBTs.
+/// @notice CBLKUnfixed tokens represents a share of an index of CBTs curated by an owner.
 contract CBLKUnfixed is ERC20, Ownable {
-    // -------------------- STATE VARIABLES --------------------
+    // -------------------------------- STATE VARIABLES --------------------------------
+
+    /// @notice The balances of the CBLK's underlying CBTs.
+    mapping(address => uint256) public balances;
 
     /// @notice The addresses of the CBLKs underlying CBT tokens.
     address[] public climateBackedTonnes;
 
-    /// @notice The balances of the CBLKs underlying CBTs.
-    mapping(address => uint256) public balances;
-
     // Maps CBT to their index in climateBackedTonnes array.
     mapping(address => uint256) indexes;
 
-    // -------------------- EVENTS --------------------
+    // -------------------------------- EVENTS --------------------------------
 
     /// @notice Chage in the underlying CBT distribtion.
     /// @param inputTokens The addresses of the deposited CBTs in order.
@@ -42,14 +40,16 @@ contract CBLKUnfixed is ERC20, Ownable {
     /// @param amounts In order amounts of CBT withdrawn.
     event Withdrawal(address indexed withdrawer, uint256[] amounts);
 
+    // -------------------------------- CONSTRUCTOR --------------------------------
+
     /// @dev Follow CBLK naming conventions.
     /// @param name Name of CBLK.
     /// @param symbol Symbol of CBLK.
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
-    // -------------------- METHODS --------------------
+    // -------------------------------- METHODS --------------------------------
 
-    /// @notice Add or remove CBTs into the the CBLK.
+    /// @notice Add or remove CBTs to the CBLK's underlying tokens.
     /// @param inputTokens In order addresses of the CBTs to add.
     /// @param inputAmounts In order amounts to add.
     /// @param outputTokens In order addresses of the CBTs to remove.
@@ -66,11 +66,7 @@ contract CBLKUnfixed is ERC20, Ownable {
                 indexes[inputTokens[i]] == climateBackedTonnes.length;
                 climateBackedTonnes.push(inputTokens[i]);
             }
-            IERC20(inputTokens[i]).transferFrom(
-                msg.sender,
-                address(this),
-                inputAmounts[i]
-            );
+            IERC20(inputTokens[i]).transferFrom(msg.sender, address(this), inputAmounts[i]);
             balances[inputTokens[i]] += inputAmounts[i];
             totalInput += inputAmounts[i];
         }
@@ -92,17 +88,13 @@ contract CBLKUnfixed is ERC20, Ownable {
     }
 
     /// @notice Convert an amount of CBLK into pro-rata amounts of its current underlying tokens.
-    /// @dev Burns input CBLK directly from the converter's wallet.
-    /// Remainder CBT from 'withdrawal calculation' is left over => leads to #CBLK < #CBT.
-    /// Contract owner only.
+    /// @dev Burns withdrawn CBLK directly from the converter's wallet.
     /// @param amount The amount of CBLK to convert.
     function withdraw(uint256 amount) public {
         uint256 totalSupply_ = totalSupply();
         _burn(msg.sender, amount);
         address[] memory climateBackedTonnes_ = climateBackedTonnes;
-        uint256[] memory withdrawals = new uint256[](
-            climateBackedTonnes_.length
-        );
+        uint256[] memory withdrawals = new uint256[](climateBackedTonnes_.length);
         for (uint256 i = 0; i < climateBackedTonnes_.length; i++) {
             address token = climateBackedTonnes_[i];
             uint256 balance = balances[climateBackedTonnes_[i]];
@@ -121,9 +113,7 @@ contract CBLKUnfixed is ERC20, Ownable {
     function _unregisterToken(address token) internal {
         uint256 tokenIndex = indexes[token];
         uint256 numberOfTokens = climateBackedTonnes.length;
-        climateBackedTonnes[tokenIndex] = climateBackedTonnes[
-            numberOfTokens - 1
-        ];
+        climateBackedTonnes[tokenIndex] = climateBackedTonnes[numberOfTokens - 1];
         climateBackedTonnes.pop();
     }
 }
