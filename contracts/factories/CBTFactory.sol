@@ -5,18 +5,30 @@ import '../CBT.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 
 contract CBTFactory is Ownable {
-    // mapping(address => bool) whitelist;
-    // mapping(address => bool) public isCBT;
-    // event Deployment(address CBT);
-    // function approve(address who, bool approval) public onlyOwner {
-    //     whitelist[who] = approval;
-    // }
-    // function deploy(string calldata name, string calldata symbol) public returns (address) {
-    //     require(whitelist[msg.sender], 'not approved');
-    //     CBT newCBT = new CBT(name, symbol);
-    //     newCBT.transferOwnership(msg.sender);
-    //     isCBT[address(newCBT)] = true;
-    //     emit Deployment(address(newCBT));
-    //     return address(newCBT);
-    // }
+    // State variables
+
+    mapping(address => bool) public isCBT;
+    mapping(address => bool) approvals;
+
+    // Events
+
+    event Deployment(address CBLK);
+
+    event ApprovalSet(address target, bool approval);
+
+    // Methods
+
+    function approve(address target, bool approval) public onlyOwner {
+        approvals[target] = approval;
+        emit ApprovalSet(target, approval);
+    }
+
+    function deploy(string calldata name, string calldata symbol) public returns (address) {
+        require(approvals[msg.sender] || msg.sender == owner(), 'Deployment approval required');
+        CBT cbt = new CBT(name, symbol);
+        cbt.transferOwnership(msg.sender);
+        isCBT[address(cbt)] = true;
+        emit Deployment(address(cbt));
+        return address(cbt);
+    }
 }

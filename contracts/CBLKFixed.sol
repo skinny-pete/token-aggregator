@@ -3,12 +3,11 @@ pragma solidity >=0.8.0;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/access/Ownable.sol';
 
 /// @title Fixed Ratio Changeblock token.
 /// @author Theo Dale & Peter Whitby.
 /// @notice CBLKFixed tokens represents a share of an underlying index of CBTs.
-contract CBLKFixed is ERC20, Ownable {
+contract CBLKFixed is ERC20 {
     // -------------------------------- STATE VARIABLES --------------------------------
 
     /// @notice The in order addresses of the CBLKFixed's underlying CBT tokens.
@@ -90,9 +89,8 @@ contract CBLKFixed is ERC20, Ownable {
         if (amount == totalSupply()) {
             for (uint256 i = 0; i < l; i++) {
                 address token = climateBackedTonnes[i];
-                uint256 withdrawal = balances[token];
-                IERC20(token).transfer(msg.sender, withdrawal);
-                balances[token] -= withdrawal;
+                IERC20(token).transfer(msg.sender, balances[token]);
+                delete balances[token];
             }
         } else {
             for (uint256 i = 0; i < l; i++) {

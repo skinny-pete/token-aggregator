@@ -91,14 +91,13 @@ contract CBLKUnfixed is ERC20, Ownable {
     /// @dev Burns withdrawn CBLK directly from the converter's wallet.
     /// @param amount The amount of CBLK to convert.
     function withdraw(uint256 amount) public {
-        uint256 totalSupply_ = totalSupply();
-        _burn(msg.sender, amount);
         address[] memory climateBackedTonnes_ = climateBackedTonnes;
         uint256[] memory withdrawals = new uint256[](climateBackedTonnes_.length);
+        uint256 supply = totalSupply();
         for (uint256 i = 0; i < climateBackedTonnes_.length; i++) {
             address token = climateBackedTonnes_[i];
             uint256 balance = balances[climateBackedTonnes_[i]];
-            uint256 withdrawal = (balance * amount) / totalSupply_;
+            uint256 withdrawal = (balance * amount) / supply;
             withdrawals[i] = withdrawal;
             IERC20(token).transfer(msg.sender, withdrawal);
             balances[token] -= withdrawal;
@@ -106,14 +105,13 @@ contract CBLKUnfixed is ERC20, Ownable {
                 _unregisterToken(token);
             }
         }
+        _burn(msg.sender, amount);
         emit Withdrawal(msg.sender, withdrawals);
     }
 
     // Removes a token from climateBackedTonnes and indexes.
     function _unregisterToken(address token) internal {
-        uint256 tokenIndex = indexes[token];
-        uint256 numberOfTokens = climateBackedTonnes.length;
-        climateBackedTonnes[tokenIndex] = climateBackedTonnes[numberOfTokens - 1];
+        climateBackedTonnes[indexes[token]] = climateBackedTonnes[climateBackedTonnes.length - 1];
         climateBackedTonnes.pop();
     }
 }
