@@ -5,34 +5,40 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 
-/// @title Fixed Ratio Changeblock
+/// @title Fixed Ratio Changeblock token.
 /// @author Theo Dale & Peter Whitby.
-/// @notice CBLK tokens represents a share of an index of CBTs.
-/// The CBTs in the index are distributed according to a specific ratio.
-/// CBLK tokens are backed 1-1 by CBTs.
+/// @notice CBLKFixed tokens represents a share of an underlying index of CBTs.
 contract CBLKFixed is ERC20, Ownable {
-    /// @notice The in order addresses of the CBLKs underlying CBT tokens.
+    // -------------------------------- STATE VARIABLES --------------------------------
+
+    /// @notice The in order addresses of the CBLKFixed's underlying CBT tokens.
     address[] public climateBackedTonnes;
 
     /// @notice The in order ratio shares of each consituent CBT token.
     uint256[] public ratios;
 
-    // Used in determining input token ratio.
-    uint256 ratioSum;
+    /// @notice The balances of the CBLKs underlying CBTs.
+    mapping(address => uint256) public balances;
 
-    // -------------------- EVENTS --------------------
+    // Denominator for ratio share calculations.
+    uint256 immutable ratioSum;
 
-    /// @notice CBT to CBLK conversion.
+    // -------------------------------- EVENTS --------------------------------
+
+    /// @notice CBT to CBLKFixed conversion.
     /// @param depositor The account depositing the CBTs.
     /// @param amounts In order amounts of CBT deposited.
     event Deposit(address indexed depositor, uint256[] amounts);
 
     /// @notice CBLK to CBT conversion.
-    /// @param withdrawer The account redeeming their CBLK.
-    /// @param amount Amount of CBLK converted.
+    /// @param withdrawer The account redeeming their CBLKFixed.
+    /// @param amount Amount of CBLKFixed converted.
     event Withdrawal(address indexed withdrawer, uint256 amount);
 
-    /// @dev Follow CBLK naming conventions.
+    // -------------------------------- CONSTRUCTOR --------------------------------
+
+    /// @notice Contract constructor.
+    /// @dev Establish underlying tokens and their ratio shares.
     /// @param name Name of CBLK.
     /// @param symbol Symbol of CBLK.
     /// @param tokens In order addresses of constituent underlying CBTs.
@@ -47,19 +53,17 @@ contract CBLKFixed is ERC20, Ownable {
         ratios = ratios_;
         uint256 ratioSum_ = 0;
         for (uint256 i = 0; i < ratios_.length; i++) {
-            ratioSum_ += ratios[i];
+            ratioSum_ += ratios_[i];
         }
         ratioSum = ratioSum_;
     }
 
-    /// @notice Deposit CBTs in correct ratio and gain CBLK.
-    /// @dev CBT approval required for the CBLK contract.
+    // -------------------------------- METHODS --------------------------------
+
+    /// @notice Deposit CBTs in established ratio and gain CBLKFixed.
+    /// @dev CBT approval required for the CBLKFixed contract.
     /// @param amounts The in order CBT amounts to deposit.
     function deposit(uint256[] memory amounts) public {
-        require(
-            amounts.length == climateBackedTonnes.length,
-            'Wrong number of input amounts'
-        );
         uint256 total = amounts[0];
         uint256[] memory ratios_ = ratios;
         for (uint256 i = 1; i < ratios_.length; i++) {
@@ -70,28 +74,35 @@ contract CBLKFixed is ERC20, Ownable {
             total += amounts[i];
         }
         for (uint256 i = 0; i < ratios_.length; i++) {
-            IERC20(climateBackedTonnes[i]).transferFrom(
-                msg.sender,
-                address(this),
-                amounts[i]
-            );
+            address token = climateBackedTonnes[i];
+            IERC20(token).transferFrom(msg.sender, address(this), amounts[i]);
+            balances[token] += amounts[i];
         }
-        emit Deposit(msg.sender, amounts);
         _mint(msg.sender, total);
+        emit Deposit(msg.sender, amounts);
     }
 
-    /// @notice Swap CBLK into its underlying CBTs
-    /// @param amount The amount of CBLK to be converted
+    /// @notice Swap CBLKFixed into its underlying CBTs
+    /// @dev Burns CBLKFixed from the callers wallet.
+    /// @param amount The amount of CBLKFixed to be converted into underlying CBTs.
     function withdraw(uint256 amount) public {
-        require(balanceOf(msg.sender) >= amount);
         uint256 l = climateBackedTonnes.length;
-        for (uint256 i = 0; i < l; i++) {
-            IERC20(climateBackedTonnes[i]).transfer(
-                msg.sender,
-                (amount * ratios[i]) / ratioSum
-            );
+        if (amount == totalSupply()) {
+            for (uint256 i = 0; i < l; i++) {
+                address token = climateBackedTonnes[i];
+                uint256 withdrawal = balances[token];
+                IERC20(token).transfer(msg.sender, withdrawal);
+                balances[token] -= withdrawal;
+            }
+        } else {
+            for (uint256 i = 0; i < l; i++) {
+                uint256 withdrawal = (amount * ratios[i]) / ratioSum;
+                address token = climateBackedTonnes[i];
+                IERC20(token).transfer(msg.sender, withdrawal);
+                balances[token] -= withdrawal;
+            }
         }
-        emit Withdrawal(msg.sender, amount);
         _burn(msg.sender, amount);
+        emit Withdrawal(msg.sender, amount);
     }
 }

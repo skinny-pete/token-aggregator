@@ -1,14 +1,18 @@
 require("@nomiclabs/hardhat-waffle");
+require('hardhat-contract-sizer');
 
 module.exports = {
   solidity: "0.8.4",
   settings: {
     optimizer: {
       enabled: true,
-      runs: 200,
+      runs: 100,
     },
   },
   networks: {
+    hardhat: {
+      allowUnlimitedContractSize: true,
+    },
     mumbai: {
       url: "https://speedy-nodes-nyc.moralis.io/614505f786fface05285bafb/polygon/mumbai",
       accounts: [
