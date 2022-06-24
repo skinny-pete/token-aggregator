@@ -16,6 +16,9 @@ contract CBLKFixed is ERC20 {
     /// @notice The in order ratio shares of each consituent CBT token.
     uint256[] public ratios;
 
+    /// @notice the number of tokens in the CBLK
+    uint256 public numTokens;
+
     /// @notice The balances of the CBLKs underlying CBTs.
     mapping(address => uint256) public balances;
 
@@ -55,6 +58,7 @@ contract CBLKFixed is ERC20 {
             ratioSum_ += ratios_[i];
         }
         ratioSum = ratioSum_;
+        numTokens = tokens.length;
     }
 
     // -------------------------------- METHODS --------------------------------

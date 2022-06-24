@@ -15,6 +15,9 @@ contract CBLKUnfixed is ERC20, Ownable {
     /// @notice The balances of the CBLK's underlying CBTs.
     mapping(address => uint256) public balances;
 
+    /// @notice the number of tokens in the CBLK
+    uint256 public numTokens;
+
     /// @notice The addresses of the CBLKs underlying CBT tokens.
     address[] public climateBackedTonnes;
 
@@ -84,6 +87,8 @@ contract CBLKUnfixed is ERC20, Ownable {
         } else if (totalInput > totalOutput) {
             _mint(msg.sender, totalInput - totalOutput);
         }
+
+        numTokens = outputTokens.length;
         emit Rebalance(inputTokens, inputAmounts, outputTokens, outputAmounts);
     }
 
