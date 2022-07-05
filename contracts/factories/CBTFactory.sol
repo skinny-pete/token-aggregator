@@ -8,7 +8,7 @@ contract CBTFactory is Ownable {
     // State variables
 
     mapping(address => bool) public isCBT;
-    mapping(address => bool) approvals;
+    mapping(address => bool) public approvals;
 
     // Events
 

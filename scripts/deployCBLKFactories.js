@@ -6,20 +6,20 @@ async function main() {
   const UnfixedFactoryFactory = await ethers.getContractFactory("CBLKUnfixedFactory")
   const FixedFactoryFactory = await ethers.getContractFactory("CBLKFixedFactory")
 
-  const CBLKIndexFactory = await ethers.getContractFactory("CBLKIndex")
+  // const CBLKIndexFactory = await ethers.getContractFactory("CBLKIndex")
 
   const UnfixedFactory = await UnfixedFactoryFactory.deploy()
   const FixedFactory = await FixedFactoryFactory.deploy()
 
-  const CBLKIndex = await CBLKIndexFactory.deploy(FixedFactory.address, UnfixedFactory.address)
-  await UnfixedFactory.setIndex(CBLKIndex.address)
-  await FixedFactory.setIndex(CBLKIndex.address)
+  // const CBLKIndex = await CBLKIndexFactory.deploy(FixedFactory.address, UnfixedFactory.address)
+  // await UnfixedFactory.setIndex(CBLKIndex.address)
+  // await FixedFactory.setIndex(CBLKIndex.address)
   
 
 
   console.log("Unfixed: ", UnfixedFactory.address);
   console.log("Fixed: ", FixedFactory.address);
-  console.log("index: ", CBLKIndex.address);
+  // console.log("index: ", CBLKIndex.address);
   await UnfixedFactory.approve(me, true);
   await FixedFactory.approve(me, true);
   console.log("Approved: ", me);

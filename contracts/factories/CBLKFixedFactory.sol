@@ -8,7 +8,7 @@ contract CBLKFixedFactory is Ownable {
     // State variables
 
     mapping(address => bool) public isCBLKFixed;
-    mapping(address => bool) approvals;
+    mapping(address => bool) public approvals;
 
     // Events
 
@@ -30,9 +30,11 @@ contract CBLKFixedFactory is Ownable {
         uint256[] calldata ratios
     ) public returns (address) {
         require(approvals[msg.sender] || msg.sender == owner(), 'Deployment approval required');
-        address cblk = address(new CBLKFixed(name, symbol, tokens, ratios));
-        isCBLKFixed[cblk] = true;
-        emit Deployment(cblk);
-        return cblk;
+        require(tokens.length == ratios.length);
+        CBLKFixed cblk = new CBLKFixed(name, symbol, tokens, ratios);
+        cblk.transferOwnership(msg.sender);
+        isCBLKFixed[address(cblk)] = true;
+        emit Deployment(address(cblk));
+        return address(cblk);
     }
 }
