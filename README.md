@@ -2,6 +2,13 @@
 
 A token aggregation protocol similar to an index allowing any set of ERC20s to be pooled and a token representative of proportional ownership minted. When the ownership token (CBLK) is burned, underlying assets (CBTs or other tokens) are distributed pro-rata to the burner.
 
+## Installation
+`npm install --save-dev hardhat`  
+  
+`npm install --save-dev @nomiclabs/hardhat-waffle ethereum-waffle chai @nomiclabs/hardhat-ethers ethers`
+  
+`npm install @openzeppelin/contracts`
+
 ## Usage
 `npm i` - install all required node packages
 
